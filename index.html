@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Simulador Logístico Pro - Mini Ticket</title>
+</head>
+<body style="background: #121212; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; display: flex; padding: 20px; gap: 20px; overflow: hidden;">
+
+    <div style="width: 340px; background: #1e1e1e; padding: 20px; border-radius: 12px; border: 1px solid #333; box-shadow: 8px 8px 20px rgba(0,0,0,0.5); overflow-y: auto; max-height: 90vh;">
+        <h2 style="color: #00ff00; margin-top: 0; text-align: center; border-bottom: 2px solid #00ff00; padding-bottom: 10px;">BODEGA DINÁMICA</h2>
+        
+        <button onclick="toggleSimulacion()" id="btnPlay" style="width: 100%; padding: 15px; background: #28a745; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 1.1em; transition: 0.3s;">INICIAR OPERACIÓN</button>
+        
+        <div style="display: flex; gap: 5px; margin-top: 10px;">
+            <button onclick="toggleRastro()" id="btnRastro" style="flex: 1; padding: 10px; background: #444; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 0.8em;">HEATMAP</button>
+            <button onclick="limpiarHeatmap()" style="flex: 1; padding: 10px; background: #555; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 0.8em;">LIMPIAR</button>
+        </div>
+
+        <div style="margin-top: 20px; background: #252525; padding: 15px; border-radius: 8px;">
+            <label style="font-size: 0.8em; color: #888;">VELOCIDAD DE FLUJO</label>
+            <select id="multiplicador" onchange="actualizarVelocidad()" style="width: 100%; margin-top: 5px; padding: 10px; background: #333; color: white; border: 1px solid #444; border-radius: 5px;">
+                <option value="2">0.5x (Análisis)</option>
+                <option value="1" selected>1.0x (Real)</option>
+                <option value="0.5">2.0x (Rápido)</option>
+                <option value="0.1">10.0x (Turbo)</option>
+            </select>
+        </div>
+
+        <div style="margin-top: 20px;">
+            <h4 style="margin-bottom: 10px; font-size: 0.9em; border-left: 4px solid #ffcc00; padding-left: 10px;">ESTADO DE LOS BINS (Carga)</h4>
+            <div id="binsStatus"></div>
+        </div>
+
+        <div style="margin-top: 20px;">
+            <h4 style="margin-bottom: 10px; font-size: 0.9em; border-left: 4px solid #00ffff; padding-left: 10px;">AGENTES (Mochila max: 3)</h4>
+            <div id="agentesStatus"></div>
+        </div>
+
+        <p style="font-size: 0.7em; color: #666; margin-top: 20px;">* Arrastra los puntos rojos para reubicar la zona de descarga.</p>
+    </div>
+
+    <div style="flex-grow: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+        <canvas id="bodegaCanvas" style="border: 4px solid #333; border-radius: 10px; background: #000; cursor: crosshair;"></canvas>
+        
+        <div style="margin-top: 15px; background: rgba(0,0,0,0.5); padding: 10px 20px; border-radius: 20px; display: flex; gap: 20px;">
+            <div style="display: flex; align-items: center; gap: 8px;"><span style="color:#1a468a">■</span> Pasillo</div>
+            <div style="display: flex; align-items: center; gap: 8px;"><span style="color:#800000">■</span> Bin Sectorizado</div>
+            <div style="display: flex; align-items: center; gap: 8px;"><span style="color:#b8860b">■</span> Pallet (F1-F36)</div>
+        </div>
+    </div>
+
+<script>
+const canvas = document.getElementById("bodegaCanvas");
+const ctx = canvas.getContext("2d");
+const tileSize = 44;
+
+let simActiva = false;
+let rastroActivo = false;
+let multVel = 1;
+const CAPACIDAD_MAX_PALLET = 25;
+const CARGA_MAX_AGENTE = 3;
+
+// Layout expandido a la izquierda (14 columnas)
+const mapa = [
+    [0,0,0,0,3,3,3,3,3,3,3,3,3,3],
+    [0,0,0,0,1,1,1,0,0,1,1,1,0,0],
+    [0,0,0,0,1,1,1,0,0,1,1,1,0,0],
+    [0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+    [0,0,0,0,1,1,0,1,1,0,1,1,0,0],
+    [0,0,0,0,1,1,0,1,1,0,1,1,0,0],
+    [0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+    [0,0,0,0,1,1,0,1,1,0,1,1,0,0],
+    [0,0,0,0,1,1,0,1,1,0,1,1,0,0],
+    [0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+    [0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+];
+
+let heatmap = Array(mapa.length).fill().map(() => Array(mapa[0].length).fill(0));
+let palletsRef = {};
+let bins = [
+    { id: 'A', name: 'F1-12', x: 1, y: 2, stock: 20, range: [1, 12], color: '#ff4444' },
+    { id: 'B', name: 'F13-24', x: 1, y: 6, stock: 20, range: [13, 24], color: '#ff4444' },
+    { id: 'C', name: 'F25-36', x: 1, y: 10, stock: 20, range: [25, 36], color: '#ff4444' }
+];
+
+// Mapeo inicial de pallets (Derecha a Izquierda, Abajo a Arriba)
+function mapearPallets() {
+    let contador = 1;
+    for (let x = mapa[0].length - 1; x >= 0; x--) {
+        for (let y = mapa.length - 1; y >= 0; y--) {
+            if (mapa[y][x] === 1 && contador <= 36) {
+                palletsRef[contador++] = { x, y, folios: 0 };
+            } else if (mapa[y][x] === 1) {
+                mapa[y][x] = 3; // Convertir excedentes en reserva
+            }
+        }
+    }
+}
+mapearPallets();
+
+let agentes = [
+    { id: 0, x: 13, y: 11, color: "#00ff00", offset: -10, mochila: [], rol: 'Reparto', target: null },
+    { id: 1, x: 12, y: 11, color: "#00ffff", offset: 0, mochila: [], rol: 'Reparto', target: null },
+    { id: 2, x: 11, y: 11, color: "#ff00ff", offset: 10, mochila: [], rol: 'PDA', target: null },
+    { id: 3, x: 10, y: 11, color: "#ffff00", offset: 0, mochila: [], rol: 'PDA', target: null }
+];
+
+// INTERACCIÓN: Mover Bins
+let draggingBin = null;
+canvas.addEventListener('mousedown', e => {
+    const rect = canvas.getBoundingClientRect();
+    const mx = Math.floor((e.clientX - rect.left) / tileSize);
+    const my = Math.floor((e.clientY - rect.top) / tileSize);
+    draggingBin = bins.find(b => b.x === mx && b.y === my);
+});
+canvas.addEventListener('mousemove', e => {
+    if (draggingBin) {
+        const rect = canvas.getBoundingClientRect();
+        draggingBin.x = Math.floor((e.clientX - rect.left) / tileSize);
+        draggingBin.y = Math.floor((e.clientY - rect.top) / tileSize);
+        dibujar();
+    }
+});
+canvas.addEventListener('mouseup', () => draggingBin = null);
+
+function getHeatColor(count) {
+    if (count === 0) return null;
+    const intensity = Math.min(count / 60, 1);
+    const hue = (1 - intensity) * 240;
+    return `hsla(${hue}, 100%, 50%, 0.5)`;
+}
+
+function dibujar() {
+    ctx.clearRect(0,0, canvas.width, canvas.height);
+    for(let y=0; y < mapa.length; y++){
+        for(let x=0; x < mapa[0].length; x++){
+            if(mapa[y][x] === 0) ctx.fillStyle = "#112244"; 
+            if(mapa[y][x] === 1) ctx.fillStyle = "#111"; 
+            if(mapa[y][x] === 3) ctx.fillStyle = "#222"; 
+            ctx.fillRect(x*tileSize, y*tileSize, tileSize, tileSize);
+            
+            if(rastroActivo && heatmap[y][x] > 0) {
+                ctx.fillStyle = getHeatColor(heatmap[y][x]);
+                ctx.fillRect(x*tileSize, y*tileSize, tileSize, tileSize);
+            }
+            if(mapa[y][x] === 1) dibujarPallet(x, y);
+            ctx.strokeStyle = "rgba(255,255,255,0.05)";
+            ctx.strokeRect(x*tileSize, y*tileSize, tileSize, tileSize);
+        }
+    }
+
+    bins.forEach(b => {
+        ctx.fillStyle = b.color;
+        ctx.shadowBlur = 10; ctx.shadowColor = "red";
+        ctx.fillRect(b.x*tileSize + 4, b.y*tileSize + 4, tileSize - 8, tileSize - 8);
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = "white"; ctx.font = "bold 10px Arial";
+        ctx.fillText(b.name, b.x*tileSize + tileSize/2, b.y*tileSize + tileSize/2 + 5);
+    });
+
+    agentes.forEach(a => {
+        ctx.fillStyle = a.color;
+        ctx.beginPath();
+        ctx.arc(a.x * tileSize + tileSize/2 + a.offset, a.y * tileSize + tileSize/2, 12, 0, Math.PI*2);
+        ctx.fill();
+        ctx.strokeStyle = "white"; ctx.stroke();
+        if(a.mochila.length > 0) {
+            ctx.fillStyle = "black"; ctx.font = "bold 10px Arial";
+            ctx.fillText(a.mochila.length, a.x * tileSize + tileSize/2 + a.offset, a.y * tileSize + tileSize/2 + 4);
+        }
+    });
+    actualizarUI();
+}
+
+function dibujarPallet(x, y) {
+    for(let id in palletsRef) {
+        let p = palletsRef[id];
+        if(p.x === x && p.y === y) {
+            let pct = (p.folios / CAPACIDAD_MAX_PALLET);
+            ctx.fillStyle = "white"; ctx.font = "9px Arial"; ctx.textAlign = "center";
+            ctx.fillText("F"+id, x*tileSize + tileSize/2, y*tileSize + 12);
+            ctx.fillStyle = "#333"; ctx.fillRect(x*tileSize + 8, y*tileSize + 20, tileSize - 16, 5);
+            ctx.fillStyle = pct > 0.8 ? "red" : (pct > 0.5 ? "yellow" : "#00ff00");
+            ctx.fillRect(x*tileSize + 8, y*tileSize + 20, (tileSize - 16) * pct, 5);
+        }
+    }
+}
+
+function buscarCamino(inicio, fin) {
+    let queue = [[inicio]];
+    let visitados = new Set([`${inicio.x},${inicio.y}`]);
+    while(queue.length > 0) {
+        let path = queue.shift();
+        let curr = path[path.length - 1];
+        if(curr.x === fin.x && curr.y === fin.y) return path;
+        for(let v of [{x:curr.x, y:curr.y-1},{x:curr.x, y:curr.y+1},{x:curr.x-1, y:curr.y},{x:curr.x+1, y:curr.y}]) {
+            if(v.y >= 0 && v.y < mapa.length && v.x >= 0 && v.x < mapa[0].length && 
+               mapa[v.y][v.x] === 0 && !visitados.has(`${v.x},${v.y}`)) {
+                visitados.add(`${v.x},${v.y}`);
+                queue.push([...path, v]);
+            }
+        }
+    }
+    return [];
+}
+
+async function cicloAgente(a) {
+    while(simActiva) {
+        // Lógica Polifuncional: Si el bin tiene mucho stock, ayuda a repartir
+        let binCritico = bins.find(b => b.stock > 15);
+        if(binCritico && a.rol === 'PDA') a.rol = 'Reparto';
+        else if(!binCritico && a.id > 1) a.rol = 'PDA';
+
+        if(a.rol === 'PDA') {
+            // Trabajador de PDA: Simula sectorización (aumenta stock de bins)
+            let b = bins[Math.floor(Math.random()*3)];
+            let ruta = buscarCamino({x: a.x, y: a.y}, {x: b.x + 1, y: b.y});
+            await mover(a, ruta);
+            await new Promise(r => setTimeout(r, 1000 * multVel));
+            b.stock += 5;
+        } else {
+            // Repartidor: Carga hasta 3 folios y entrega
+            let b = bins[Math.floor(Math.random()*3)];
+            let rutaHaciaBin = buscarCamino({x: a.x, y: a.y}, {x: b.x + 1, y: b.y});
+            await mover(a, rutaHaciaBin);
+            
+            // Cargar mochila (max 3 o lo que haya en bin)
+            let cantidad = Math.min(b.stock, CARGA_MAX_AGENTE);
+            if(cantidad > 0) {
+                b.stock -= cantidad;
+                for(let i=0; i<cantidad; i++) {
+                    let fId = Math.floor(Math.random() * (b.range[1] - b.range[0] + 1)) + b.range[0];
+                    a.mochila.push(fId);
+                }
+            }
+
+            // Entregar cada folio de la mochila sin volver al bin
+            while(a.mochila.length > 0) {
+                let fId = a.mochila[0];
+                let p = palletsRef[fId];
+                if(!p) { a.mochila.shift(); continue; }
+                
+                let destPasillo = {x: p.x, y: p.y};
+                const ops = [{x:p.x+1,y:p.y},{x:p.x-1,y:p.y},{x:p.x,y:p.y+1},{x:p.x,y:p.y-1}];
+                for(let o of ops) if(mapa[o.y] && mapa[o.y][o.x] === 0) { destPasillo = o; break; }
+
+                let rutaEntrega = buscarCamino({x: a.x, y: a.y}, destPasillo);
+                await mover(a, rutaEntrega);
+                
+                if(p.folios < CAPACIDAD_MAX_PALLET) p.folios++;
+                a.mochila.shift();
+                await new Promise(r => setTimeout(r, 400 * multVel));
+            }
+        }
+    }
+}
+
+async function mover(agente, ruta) {
+    for(let p of ruta) {
+        if(!simActiva) break;
+        agente.x = p.x; agente.y = p.y;
+        heatmap[p.y][p.x]++;
+        dibujar();
+        await new Promise(r => setTimeout(r, 80 * multVel));
+    }
+}
+
+function actualizarUI() {
+    document.getElementById('binsStatus').innerHTML = bins.map(b => `
+        <div style="font-size:0.8em; margin-bottom:5px;">
+            Bin ${b.name}: <strong>${b.stock}</strong> folios
+            <div style="width:100%; height:4px; background:#444;"><div style="width:${Math.min(b.stock*4, 100)}%; height:100%; background:red;"></div></div>
+        </div>
+    `).join('');
+    
+    document.getElementById('agentesStatus').innerHTML = agentes.map(a => `
+        <div style="font-size:0.8em; color:${a.color};">
+            ● Agent ${a.id} (${a.rol}): ${a.mochila.length > 0 ? 'Lleva '+a.mochila.length : 'Vaciando'}
+        </div>
+    `).join('');
+
+    let sumaTotal = 0;
+    for(let id in palletsRef) sumaTotal += palletsRef[id].folios;
+    document.getElementById("ocupacionGlobal").innerText = Math.floor((sumaTotal / (36 * 25)) * 100) + "%";
+}
+
+function toggleSimulacion() {
+    simActiva = !simActiva;
+    const btn = document.getElementById("btnPlay");
+    btn.innerText = simActiva ? "DETENER" : "REANUDAR";
+    btn.style.background = simActiva ? "#dc3545" : "#28a745";
+    if(simActiva) agentes.forEach(a => cicloAgente(a));
+}
+
+function toggleRastro() { rastroActivo = !rastroActivo; dibujar(); }
+function limpiarHeatmap() { heatmap = heatmap.map(r => r.fill(0)); dibujar(); }
+function actualizarVelocidad() { multVel = parseFloat(document.getElementById("multiplicador").value); }
+
+canvas.width = mapa[0].length * tileSize;
+canvas.height = mapa.length * tileSize;
+dibujar();
+</script>
+
+<div style="position: absolute; bottom: 20px; right: 20px; background: rgba(0,0,0,0.8); padding: 10px; border-radius: 8px; border: 1px solid #444;">
+    <p style="margin: 0; font-size: 0.8em; color: #ffcc00;">OCUPACIÓN TOTAL: <span id="ocupacionGlobal">0%</span></p>
+</div>
+
+</body>
+</html>
