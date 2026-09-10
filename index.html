@@ -1,309 +1,467 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
-    <title>Simulador Logístico Pro - Mini Ticket</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Generador de Códigos</title>
+<style>
+    * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+    }
+
+    :root {
+        --fondo: #f5f1e8;
+        --tarjeta: #ffffff;
+        --borde: #e5e0d5;
+        --texto: #2d3748;
+        --texto-suave: #718096;
+        --acento: #2b6cb0;
+        --rojo: #c53030;
+        --rojo-hover: #9b2c2c;
+        --verde: #2f855a;
+        --radio: 12px;
+    }
+
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        background: var(--fondo);
+        min-height: 100vh;
+        padding: 24px;
+        color: var(--texto);
+    }
+
+    .contenedor {
+        max-width: 1100px;
+        margin: 0 auto;
+        display: grid;
+        grid-template-columns: 340px 1fr;
+        gap: 20px;
+        align-items: start;
+    }
+
+    .tarjeta {
+        background: var(--tarjeta);
+        border-radius: var(--radio);
+        border: 1px solid var(--borde);
+        padding: 24px;
+    }
+
+    h2 {
+        font-size: 1.05rem;
+        font-weight: 700;
+        margin-bottom: 20px;
+        color: var(--texto);
+    }
+
+    .campo {
+        margin-bottom: 20px;
+    }
+
+    label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 8px;
+        font-size: 0.85rem;
+        color: var(--texto);
+    }
+
+    select,
+    textarea {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid var(--borde);
+        border-radius: 8px;
+        font-size: 0.95rem;
+        font-family: inherit;
+        background: #fff;
+        color: var(--texto);
+        transition: border-color 0.15s;
+    }
+
+    select:focus,
+    textarea:focus {
+        outline: none;
+        border-color: var(--acento);
+    }
+
+    textarea {
+        height: 120px;
+        resize: vertical;
+        line-height: 1.4;
+    }
+
+    #campoErrorCorrection.oculto {
+        display: none;
+    }
+
+    .preview-tarjeta {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .preview-header {
+        font-size: 1.05rem;
+        font-weight: 700;
+        margin-bottom: 20px;
+    }
+
+    .lienzo {
+        border: 1px dashed #cbd5e0;
+        border-radius: 8px;
+        height: 420px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+        overflow: hidden;
+        background-color: #ffffff;
+        background-image:
+            linear-gradient(45deg, #e8e8e8 25%, transparent 25%),
+            linear-gradient(-45deg, #e8e8e8 25%, transparent 25%),
+            linear-gradient(45deg, transparent 75%, #e8e8e8 75%),
+            linear-gradient(-45deg, transparent 75%, #e8e8e8 75%);
+        background-size: 20px 20px;
+        background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+    }
+
+    .lienzo svg {
+        max-width: 100%;
+        max-height: 100%;
+        width: auto;
+        height: auto;
+        display: block;
+    }
+
+    .aviso-vacio {
+        color: var(--texto-suave);
+        font-size: 0.9rem;
+        text-align: center;
+        user-select: none;
+    }
+
+    .error {
+        background: #fed7d7;
+        color: var(--rojo);
+        padding: 10px 14px;
+        border-radius: 8px;
+        font-size: 0.85rem;
+        border-left: 4px solid var(--rojo);
+        margin-top: 16px;
+    }
+
+    .error.oculto {
+        display: none;
+    }
+
+    .botones {
+        display: flex;
+        gap: 12px;
+        margin-top: 20px;
+    }
+
+    button {
+        flex: 1;
+        padding: 14px 20px;
+        border: none;
+        border-radius: 8px;
+        font-size: 0.95rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s, transform 0.1s;
+        font-family: inherit;
+    }
+
+    button:active:not(:disabled) {
+        transform: scale(0.98);
+    }
+
+    button:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+    }
+
+    .btn-descargar {
+        background: var(--rojo);
+        color: #fff;
+    }
+
+    .btn-descargar:hover:not(:disabled) {
+        background: var(--rojo-hover);
+    }
+
+    .btn-copiar {
+        background: #edf2f7;
+        color: var(--texto);
+    }
+
+    .btn-copiar:hover:not(:disabled) {
+        background: #e2e8f0;
+    }
+
+    .btn-copiar.copiado {
+        background: var(--verde);
+        color: #fff;
+    }
+
+    @media (max-width: 820px) {
+        .contenedor {
+            grid-template-columns: 1fr;
+        }
+        .lienzo {
+            height: 320px;
+        }
+    }
+</style>
 </head>
-<body style="background: #121212; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; display: flex; padding: 20px; gap: 20px; overflow: hidden;">
+<body>
+    <div class="contenedor">
+        <!-- Panel de configuración -->
+        <div class="tarjeta">
+            <h2>Configuración</h2>
 
-    <div style="width: 340px; background: #1e1e1e; padding: 20px; border-radius: 12px; border: 1px solid #333; box-shadow: 8px 8px 20px rgba(0,0,0,0.5); overflow-y: auto; max-height: 90vh;">
-        <h2 style="color: #00ff00; margin-top: 0; text-align: center; border-bottom: 2px solid #00ff00; padding-bottom: 10px;">BODEGA DINÁMICA</h2>
-        
-        <button onclick="toggleSimulacion()" id="btnPlay" style="width: 100%; padding: 15px; background: #28a745; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 1.1em; transition: 0.3s;">INICIAR OPERACIÓN</button>
-        
-        <div style="display: flex; gap: 5px; margin-top: 10px;">
-            <button onclick="toggleRastro()" id="btnRastro" style="flex: 1; padding: 10px; background: #444; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 0.8em;">HEATMAP</button>
-            <button onclick="limpiarHeatmap()" style="flex: 1; padding: 10px; background: #555; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 0.8em;">LIMPIAR</button>
+            <div class="campo">
+                <label for="tipo">Tipo de código</label>
+                <select id="tipo">
+                    <option value="code128">Code 128 (1D)</option>
+                    <option value="qrcode">QR Code (2D)</option>
+                    <option value="azteccode">Aztec (2D)</option>
+                </select>
+            </div>
+
+            <div class="campo">
+                <label for="texto">Datos</label>
+                <textarea id="texto" placeholder="Escribe aquí el texto a codificar..." spellcheck="false"></textarea>
+            </div>
+
+            <div class="campo" id="campoErrorCorrection">
+                <label for="errorCorrection">Error correction</label>
+                <select id="errorCorrection">
+                    <option value="L">Low (L)</option>
+                    <option value="M" selected>Medium (M)</option>
+                    <option value="Q">Quartile (Q)</option>
+                    <option value="H">High (H)</option>
+                </select>
+            </div>
         </div>
 
-        <div style="margin-top: 20px; background: #252525; padding: 15px; border-radius: 8px;">
-            <label style="font-size: 0.8em; color: #888;">VELOCIDAD DE FLUJO</label>
-            <select id="multiplicador" onchange="actualizarVelocidad()" style="width: 100%; margin-top: 5px; padding: 10px; background: #333; color: white; border: 1px solid #444; border-radius: 5px;">
-                <option value="2">0.5x (Análisis)</option>
-                <option value="1" selected>1.0x (Real)</option>
-                <option value="0.5">2.0x (Rápido)</option>
-                <option value="0.1">10.0x (Turbo)</option>
-            </select>
-        </div>
+        <!-- Panel de preview -->
+        <div class="tarjeta preview-tarjeta">
+            <div class="preview-header">Preview</div>
 
-        <div style="margin-top: 20px;">
-            <h4 style="margin-bottom: 10px; font-size: 0.9em; border-left: 4px solid #ffcc00; padding-left: 10px;">ESTADO DE LOS BINS (Carga)</h4>
-            <div id="binsStatus"></div>
-        </div>
+            <div class="lienzo" id="lienzo">
+                <span class="aviso-vacio" id="avisoVacio">Escribe algo para generar el código</span>
+            </div>
 
-        <div style="margin-top: 20px;">
-            <h4 style="margin-bottom: 10px; font-size: 0.9em; border-left: 4px solid #00ffff; padding-left: 10px;">AGENTES (Mochila max: 3)</h4>
-            <div id="agentesStatus"></div>
-        </div>
+            <div class="error oculto" id="mensajeError"></div>
 
-        <p style="font-size: 0.7em; color: #666; margin-top: 20px;">* Arrastra los puntos rojos para reubicar la zona de descarga.</p>
+            <div class="botones">
+                <button class="btn-descargar" id="btnDescargar" disabled>Descargar SVG</button>
+                <button class="btn-copiar" id="btnCopiar" disabled>Copiar SVG</button>
+            </div>
+        </div>
     </div>
 
-    <div style="flex-grow: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;">
-        <canvas id="bodegaCanvas" style="border: 4px solid #333; border-radius: 10px; background: #000; cursor: crosshair;"></canvas>
-        
-        <div style="margin-top: 15px; background: rgba(0,0,0,0.5); padding: 10px 20px; border-radius: 20px; display: flex; gap: 20px;">
-            <div style="display: flex; align-items: center; gap: 8px;"><span style="color:#1a468a">■</span> Pasillo</div>
-            <div style="display: flex; align-items: center; gap: 8px;"><span style="color:#800000">■</span> Bin Sectorizado</div>
-            <div style="display: flex; align-items: center; gap: 8px;"><span style="color:#b8860b">■</span> Pallet (F1-F36)</div>
-        </div>
-    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bwip-js@4.5.4/dist/bwip-js-min.js"></script>
+    <script>
+        // ==================== Referencias DOM ====================
+        const tipoSelect        = document.getElementById('tipo');
+        const textoInput        = document.getElementById('texto');
+        const campoErrCorr      = document.getElementById('campoErrorCorrection');
+        const errorCorrection   = document.getElementById('errorCorrection');
+        const lienzo            = document.getElementById('lienzo');
+        const avisoVacio        = document.getElementById('avisoVacio');
+        const mensajeError      = document.getElementById('mensajeError');
+        const btnDescargar      = document.getElementById('btnDescargar');
+        const btnCopiar         = document.getElementById('btnCopiar');
 
-<script>
-const canvas = document.getElementById("bodegaCanvas");
-const ctx = canvas.getContext("2d");
-const tileSize = 44;
+        // ==================== Estado ====================
+        let svgActual = null;
+        let timeoutGenerar = null;
+        let timeoutError = null;
 
-let simActiva = false;
-let rastroActivo = false;
-let multVel = 1;
-const CAPACIDAD_MAX_PALLET = 25;
-const CARGA_MAX_AGENTE = 3;
+        // ==================== Utilidades ====================
 
-// Layout expandido a la izquierda (14 columnas)
-const mapa = [
-    [0,0,0,0,3,3,3,3,3,3,3,3,3,3],
-    [0,0,0,0,1,1,1,0,0,1,1,1,0,0],
-    [0,0,0,0,1,1,1,0,0,1,1,1,0,0],
-    [0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-    [0,0,0,0,1,1,0,1,1,0,1,1,0,0],
-    [0,0,0,0,1,1,0,1,1,0,1,1,0,0],
-    [0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-    [0,0,0,0,1,1,0,1,1,0,1,1,0,0],
-    [0,0,0,0,1,1,0,1,1,0,1,1,0,0],
-    [0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-    [0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-    [0,0,0,0,0,0,0,0,0,0,0,0,0,0]
-];
+        function ocultarError() {
+            clearTimeout(timeoutError);
+            mensajeError.textContent = '';
+            mensajeError.classList.add('oculto');
+        }
 
-let heatmap = Array(mapa.length).fill().map(() => Array(mapa[0].length).fill(0));
-let palletsRef = {};
-let bins = [
-    { id: 'A', name: 'F1-12', x: 1, y: 2, stock: 20, range: [1, 12], color: '#ff4444' },
-    { id: 'B', name: 'F13-24', x: 1, y: 6, stock: 20, range: [13, 24], color: '#ff4444' },
-    { id: 'C', name: 'F25-36', x: 1, y: 10, stock: 20, range: [25, 36], color: '#ff4444' }
-];
+        function mostrarErrorDiferido(mensaje) {
+            clearTimeout(timeoutError);
+            timeoutError = setTimeout(() => {
+                mensajeError.textContent = mensaje;
+                mensajeError.classList.remove('oculto');
+            }, 500);
+        }
 
-// Mapeo inicial de pallets (Derecha a Izquierda, Abajo a Arriba)
-function mapearPallets() {
-    let contador = 1;
-    for (let x = mapa[0].length - 1; x >= 0; x--) {
-        for (let y = mapa.length - 1; y >= 0; y--) {
-            if (mapa[y][x] === 1 && contador <= 36) {
-                palletsRef[contador++] = { x, y, folios: 0 };
-            } else if (mapa[y][x] === 1) {
-                mapa[y][x] = 3; // Convertir excedentes en reserva
+        function limpiarLienzo() {
+            lienzo.innerHTML = '';
+            lienzo.appendChild(avisoVacio);
+            avisoVacio.style.display = 'block';
+        }
+
+        function habilitarBotones(habilitado) {
+            btnDescargar.disabled = !habilitado;
+            btnCopiar.disabled = !habilitado;
+        }
+
+        /**
+         * El selector de error correction solo aplica a QR.
+         * Se oculta con Code 128 y con Aztec.
+         */
+        function actualizarVisibilidadErrorCorrection() {
+            const tipo = tipoSelect.value;
+            if (tipo === 'qrcode') {
+                campoErrCorr.classList.remove('oculto');
+            } else {
+                campoErrCorr.classList.add('oculto');
             }
         }
-    }
-}
-mapearPallets();
 
-let agentes = [
-    { id: 0, x: 13, y: 11, color: "#00ff00", offset: -10, mochila: [], rol: 'Reparto', target: null },
-    { id: 1, x: 12, y: 11, color: "#00ffff", offset: 0, mochila: [], rol: 'Reparto', target: null },
-    { id: 2, x: 11, y: 11, color: "#ff00ff", offset: 10, mochila: [], rol: 'PDA', target: null },
-    { id: 3, x: 10, y: 11, color: "#ffff00", offset: 0, mochila: [], rol: 'PDA', target: null }
-];
+        /**
+         * Genera un nombre de archivo seguro a partir del tipo y el texto.
+         */
+        function generarNombreArchivo(tipo, texto) {
+            const mapa = { code128: 'code128', qrcode: 'qrcode', azteccode: 'aztec' };
+            const prefijo = mapa[tipo] || 'codigo';
 
-// INTERACCIÓN: Mover Bins
-let draggingBin = null;
-canvas.addEventListener('mousedown', e => {
-    const rect = canvas.getBoundingClientRect();
-    const mx = Math.floor((e.clientX - rect.left) / tileSize);
-    const my = Math.floor((e.clientY - rect.top) / tileSize);
-    draggingBin = bins.find(b => b.x === mx && b.y === my);
-});
-canvas.addEventListener('mousemove', e => {
-    if (draggingBin) {
-        const rect = canvas.getBoundingClientRect();
-        draggingBin.x = Math.floor((e.clientX - rect.left) / tileSize);
-        draggingBin.y = Math.floor((e.clientY - rect.top) / tileSize);
-        dibujar();
-    }
-});
-canvas.addEventListener('mouseup', () => draggingBin = null);
+            let cuerpo = texto
+                .replace(/[\r\n\t ]+/g, '_')
+                .replace(/[\\/:*?"<>|]+/g, '_')
+                .replace(/_+/g, '_')
+                .replace(/^_+|_+$/g, '');
 
-function getHeatColor(count) {
-    if (count === 0) return null;
-    const intensity = Math.min(count / 60, 1);
-    const hue = (1 - intensity) * 240;
-    return `hsla(${hue}, 100%, 50%, 0.5)`;
-}
-
-function dibujar() {
-    ctx.clearRect(0,0, canvas.width, canvas.height);
-    for(let y=0; y < mapa.length; y++){
-        for(let x=0; x < mapa[0].length; x++){
-            if(mapa[y][x] === 0) ctx.fillStyle = "#112244"; 
-            if(mapa[y][x] === 1) ctx.fillStyle = "#111"; 
-            if(mapa[y][x] === 3) ctx.fillStyle = "#222"; 
-            ctx.fillRect(x*tileSize, y*tileSize, tileSize, tileSize);
-            
-            if(rastroActivo && heatmap[y][x] > 0) {
-                ctx.fillStyle = getHeatColor(heatmap[y][x]);
-                ctx.fillRect(x*tileSize, y*tileSize, tileSize, tileSize);
-            }
-            if(mapa[y][x] === 1) dibujarPallet(x, y);
-            ctx.strokeStyle = "rgba(255,255,255,0.05)";
-            ctx.strokeRect(x*tileSize, y*tileSize, tileSize, tileSize);
-        }
-    }
-
-    bins.forEach(b => {
-        ctx.fillStyle = b.color;
-        ctx.shadowBlur = 10; ctx.shadowColor = "red";
-        ctx.fillRect(b.x*tileSize + 4, b.y*tileSize + 4, tileSize - 8, tileSize - 8);
-        ctx.shadowBlur = 0;
-        ctx.fillStyle = "white"; ctx.font = "bold 10px Arial";
-        ctx.fillText(b.name, b.x*tileSize + tileSize/2, b.y*tileSize + tileSize/2 + 5);
-    });
-
-    agentes.forEach(a => {
-        ctx.fillStyle = a.color;
-        ctx.beginPath();
-        ctx.arc(a.x * tileSize + tileSize/2 + a.offset, a.y * tileSize + tileSize/2, 12, 0, Math.PI*2);
-        ctx.fill();
-        ctx.strokeStyle = "white"; ctx.stroke();
-        if(a.mochila.length > 0) {
-            ctx.fillStyle = "black"; ctx.font = "bold 10px Arial";
-            ctx.fillText(a.mochila.length, a.x * tileSize + tileSize/2 + a.offset, a.y * tileSize + tileSize/2 + 4);
-        }
-    });
-    actualizarUI();
-}
-
-function dibujarPallet(x, y) {
-    for(let id in palletsRef) {
-        let p = palletsRef[id];
-        if(p.x === x && p.y === y) {
-            let pct = (p.folios / CAPACIDAD_MAX_PALLET);
-            ctx.fillStyle = "white"; ctx.font = "9px Arial"; ctx.textAlign = "center";
-            ctx.fillText("F"+id, x*tileSize + tileSize/2, y*tileSize + 12);
-            ctx.fillStyle = "#333"; ctx.fillRect(x*tileSize + 8, y*tileSize + 20, tileSize - 16, 5);
-            ctx.fillStyle = pct > 0.8 ? "red" : (pct > 0.5 ? "yellow" : "#00ff00");
-            ctx.fillRect(x*tileSize + 8, y*tileSize + 20, (tileSize - 16) * pct, 5);
-        }
-    }
-}
-
-function buscarCamino(inicio, fin) {
-    let queue = [[inicio]];
-    let visitados = new Set([`${inicio.x},${inicio.y}`]);
-    while(queue.length > 0) {
-        let path = queue.shift();
-        let curr = path[path.length - 1];
-        if(curr.x === fin.x && curr.y === fin.y) return path;
-        for(let v of [{x:curr.x, y:curr.y-1},{x:curr.x, y:curr.y+1},{x:curr.x-1, y:curr.y},{x:curr.x+1, y:curr.y}]) {
-            if(v.y >= 0 && v.y < mapa.length && v.x >= 0 && v.x < mapa[0].length && 
-               mapa[v.y][v.x] === 0 && !visitados.has(`${v.x},${v.y}`)) {
-                visitados.add(`${v.x},${v.y}`);
-                queue.push([...path, v]);
-            }
-        }
-    }
-    return [];
-}
-
-async function cicloAgente(a) {
-    while(simActiva) {
-        // Lógica Polifuncional: Si el bin tiene mucho stock, ayuda a repartir
-        let binCritico = bins.find(b => b.stock > 15);
-        if(binCritico && a.rol === 'PDA') a.rol = 'Reparto';
-        else if(!binCritico && a.id > 1) a.rol = 'PDA';
-
-        if(a.rol === 'PDA') {
-            // Trabajador de PDA: Simula sectorización (aumenta stock de bins)
-            let b = bins[Math.floor(Math.random()*3)];
-            let ruta = buscarCamino({x: a.x, y: a.y}, {x: b.x + 1, y: b.y});
-            await mover(a, ruta);
-            await new Promise(r => setTimeout(r, 1000 * multVel));
-            b.stock += 5;
-        } else {
-            // Repartidor: Carga hasta 3 folios y entrega
-            let b = bins[Math.floor(Math.random()*3)];
-            let rutaHaciaBin = buscarCamino({x: a.x, y: a.y}, {x: b.x + 1, y: b.y});
-            await mover(a, rutaHaciaBin);
-            
-            // Cargar mochila (max 3 o lo que haya en bin)
-            let cantidad = Math.min(b.stock, CARGA_MAX_AGENTE);
-            if(cantidad > 0) {
-                b.stock -= cantidad;
-                for(let i=0; i<cantidad; i++) {
-                    let fId = Math.floor(Math.random() * (b.range[1] - b.range[0] + 1)) + b.range[0];
-                    a.mochila.push(fId);
-                }
+            if (cuerpo.length > 50) {
+                cuerpo = cuerpo.slice(0, 50);
             }
 
-            // Entregar cada folio de la mochila sin volver al bin
-            while(a.mochila.length > 0) {
-                let fId = a.mochila[0];
-                let p = palletsRef[fId];
-                if(!p) { a.mochila.shift(); continue; }
-                
-                let destPasillo = {x: p.x, y: p.y};
-                const ops = [{x:p.x+1,y:p.y},{x:p.x-1,y:p.y},{x:p.x,y:p.y+1},{x:p.x,y:p.y-1}];
-                for(let o of ops) if(mapa[o.y] && mapa[o.y][o.x] === 0) { destPasillo = o; break; }
+            return `${prefijo}_${cuerpo}.svg`;
+        }
 
-                let rutaEntrega = buscarCamino({x: a.x, y: a.y}, destPasillo);
-                await mover(a, rutaEntrega);
-                
-                if(p.folios < CAPACIDAD_MAX_PALLET) p.folios++;
-                a.mochila.shift();
-                await new Promise(r => setTimeout(r, 400 * multVel));
+        // ==================== Generación ====================
+
+        function generarCodigo() {
+            ocultarError();
+
+            const tipo = tipoSelect.value;
+            const texto = textoInput.value;
+
+            if (!texto.trim()) {
+                svgActual = null;
+                limpiarLienzo();
+                habilitarBotones(false);
+                return;
+            }
+
+            const opciones = {
+                bcid: tipo,
+                text: texto,
+                scale: 3,
+                paddingwidth: 10,
+                paddingheight: 10
+            };
+
+            if (tipo === 'code128') {
+                opciones.includetext = true;
+                opciones.textxalign = 'center';
+                opciones.height = 10;
+            }
+
+            // Error correction SOLO aplica a QR.
+            // Aztec usa su propio nivel automático.
+            if (tipo === 'qrcode') {
+                opciones.eclevel = errorCorrection.value;
+            }
+
+            let svg;
+            try {
+                svg = bwipjs.toSVG(opciones);
+            } catch (err) {
+                console.error('Error bwip-js:', err);
+                svgActual = null;
+                limpiarLienzo();
+                habilitarBotones(false);
+                mostrarErrorDiferido('No se pudo generar el código con esos datos.');
+                return;
+            }
+
+            svgActual = svg;
+            lienzo.innerHTML = svg;
+            avisoVacio.style.display = 'none';
+            habilitarBotones(true);
+        }
+
+        function programarGeneracion() {
+            clearTimeout(timeoutGenerar);
+            timeoutGenerar = setTimeout(generarCodigo, 180);
+        }
+
+        // ==================== Descargar ====================
+
+        function descargarSVG() {
+            if (!svgActual) return;
+
+            const tipo = tipoSelect.value;
+            const texto = textoInput.value;
+            const nombre = generarNombreArchivo(tipo, texto);
+
+            const blob = new Blob([svgActual], { type: 'image/svg+xml;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const enlace = document.createElement('a');
+            enlace.href = url;
+            enlace.download = nombre;
+            document.body.appendChild(enlace);
+            enlace.click();
+            document.body.removeChild(enlace);
+            URL.revokeObjectURL(url);
+        }
+
+        // ==================== Copiar ====================
+
+        async function copiarSVG() {
+            if (!svgActual) return;
+
+            try {
+                await navigator.clipboard.writeText(svgActual);
+
+                const textoOriginal = btnCopiar.textContent;
+                btnCopiar.textContent = '¡Copiado!';
+                btnCopiar.classList.add('copiado');
+
+                setTimeout(() => {
+                    btnCopiar.textContent = textoOriginal;
+                    btnCopiar.classList.remove('copiado');
+                }, 1500);
+            } catch (err) {
+                console.error('Error al copiar:', err);
+                mostrarErrorDiferido('No se pudo copiar al portapapeles.');
             }
         }
-    }
-}
 
-async function mover(agente, ruta) {
-    for(let p of ruta) {
-        if(!simActiva) break;
-        agente.x = p.x; agente.y = p.y;
-        heatmap[p.y][p.x]++;
-        dibujar();
-        await new Promise(r => setTimeout(r, 80 * multVel));
-    }
-}
+        // ==================== Event Listeners ====================
 
-function actualizarUI() {
-    document.getElementById('binsStatus').innerHTML = bins.map(b => `
-        <div style="font-size:0.8em; margin-bottom:5px;">
-            Bin ${b.name}: <strong>${b.stock}</strong> folios
-            <div style="width:100%; height:4px; background:#444;"><div style="width:${Math.min(b.stock*4, 100)}%; height:100%; background:red;"></div></div>
-        </div>
-    `).join('');
-    
-    document.getElementById('agentesStatus').innerHTML = agentes.map(a => `
-        <div style="font-size:0.8em; color:${a.color};">
-            ● Agent ${a.id} (${a.rol}): ${a.mochila.length > 0 ? 'Lleva '+a.mochila.length : 'Vaciando'}
-        </div>
-    `).join('');
+        textoInput.addEventListener('input', programarGeneracion);
 
-    let sumaTotal = 0;
-    for(let id in palletsRef) sumaTotal += palletsRef[id].folios;
-    document.getElementById("ocupacionGlobal").innerText = Math.floor((sumaTotal / (36 * 25)) * 100) + "%";
-}
+        tipoSelect.addEventListener('change', () => {
+            actualizarVisibilidadErrorCorrection();
+            programarGeneracion();
+        });
 
-function toggleSimulacion() {
-    simActiva = !simActiva;
-    const btn = document.getElementById("btnPlay");
-    btn.innerText = simActiva ? "DETENER" : "REANUDAR";
-    btn.style.background = simActiva ? "#dc3545" : "#28a745";
-    if(simActiva) agentes.forEach(a => cicloAgente(a));
-}
+        errorCorrection.addEventListener('change', programarGeneracion);
 
-function toggleRastro() { rastroActivo = !rastroActivo; dibujar(); }
-function limpiarHeatmap() { heatmap = heatmap.map(r => r.fill(0)); dibujar(); }
-function actualizarVelocidad() { multVel = parseFloat(document.getElementById("multiplicador").value); }
+        btnDescargar.addEventListener('click', descargarSVG);
+        btnCopiar.addEventListener('click', copiarSVG);
 
-canvas.width = mapa[0].length * tileSize;
-canvas.height = mapa.length * tileSize;
-dibujar();
-</script>
+        // ==================== Inicialización ====================
 
-<div style="position: absolute; bottom: 20px; right: 20px; background: rgba(0,0,0,0.8); padding: 10px; border-radius: 8px; border: 1px solid #444;">
-    <p style="margin: 0; font-size: 0.8em; color: #ffcc00;">OCUPACIÓN TOTAL: <span id="ocupacionGlobal">0%</span></p>
-</div>
-
+        window.addEventListener('DOMContentLoaded', () => {
+            actualizarVisibilidadErrorCorrection();
+            limpiarLienzo();
+            habilitarBotones(false);
+        });
+    </script>
 </body>
 </html>
