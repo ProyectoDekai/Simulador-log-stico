@@ -21,6 +21,9 @@
         --rojo: #c53030;
         --rojo-hover: #9b2c2c;
         --verde: #2f855a;
+        --amarillo-fondo: #fefcbf;
+        --amarillo-texto: #744210;
+        --amarillo-borde: #d69e2e;
         --radio: 12px;
     }
 
@@ -98,8 +101,8 @@
         display: none;
     }
 
-    /* ===== Campo "Texto visible" ===== */
-    #campoTextoVisible.oculto {
+    /* ===== Campo "Texto central decorativo" ===== */
+    #campoTextoCentral.oculto {
         display: none;
     }
 
@@ -122,12 +125,93 @@
         accent-color: var(--acento);
     }
 
-    #textoVisible {
-        margin-top: 10px;
+    .subpanel {
+        margin-top: 12px;
+        padding-top: 12px;
+        border-top: 1px solid var(--borde);
     }
 
-    #textoVisible.oculto {
+    .subpanel.oculto {
         display: none;
+    }
+
+    .subcampo {
+        margin-bottom: 14px;
+    }
+
+    .subcampo:last-child {
+        margin-bottom: 0;
+    }
+
+    .subcampo label {
+        font-size: 0.8rem;
+        color: var(--texto-suave);
+        margin-bottom: 6px;
+        font-weight: 600;
+    }
+
+    .slider-linea {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .slider-linea input[type="range"] {
+        flex: 1;
+        accent-color: var(--acento);
+        cursor: pointer;
+    }
+
+    .slider-valor {
+        min-width: 32px;
+        text-align: right;
+        font-size: 0.8rem;
+        font-weight: 700;
+        color: var(--acento);
+        font-variant-numeric: tabular-nums;
+    }
+
+    .color-linea {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .color-linea input[type="color"] {
+        width: 40px;
+        height: 34px;
+        padding: 2px;
+        border: 1px solid var(--borde);
+        border-radius: 6px;
+        background: #fff;
+        cursor: pointer;
+    }
+
+    .color-linea input[type="text"] {
+        flex: 1;
+        font-family: ui-monospace, "SF Mono", Menlo, monospace;
+        font-size: 0.85rem;
+        text-transform: lowercase;
+    }
+
+    .btn-restaurar {
+        width: 100%;
+        padding: 8px 12px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        border: 1px solid var(--borde);
+        background: #f7fafc;
+        color: var(--texto-suave);
+        border-radius: 6px;
+        cursor: pointer;
+        margin-top: 4px;
+        font-family: inherit;
+        transition: background 0.15s, color 0.15s;
+    }
+
+    .btn-restaurar:hover {
+        background: #edf2f7;
+        color: var(--texto);
     }
 
     .preview-tarjeta {
@@ -175,6 +259,20 @@
         user-select: none;
     }
 
+    .aviso {
+        background: var(--amarillo-fondo);
+        color: var(--amarillo-texto);
+        border-left: 4px solid var(--amarillo-borde);
+        padding: 10px 14px;
+        border-radius: 8px;
+        font-size: 0.85rem;
+        margin-top: 12px;
+    }
+
+    .aviso.oculto {
+        display: none;
+    }
+
     .error {
         background: #fed7d7;
         color: var(--rojo);
@@ -182,7 +280,7 @@
         border-radius: 8px;
         font-size: 0.85rem;
         border-left: 4px solid var(--rojo);
-        margin-top: 16px;
+        margin-top: 12px;
     }
 
     .error.oculto {
@@ -195,7 +293,7 @@
         margin-top: 20px;
     }
 
-    button {
+    button:not(.btn-restaurar) {
         flex: 1;
         padding: 14px 20px;
         border: none;
@@ -207,11 +305,11 @@
         font-family: inherit;
     }
 
-    button:active:not(:disabled) {
+    button:not(.btn-restaurar):active:not(:disabled) {
         transform: scale(0.98);
     }
 
-    button:disabled {
+    button:not(.btn-restaurar):disabled {
         opacity: 0.4;
         cursor: not-allowed;
     }
@@ -269,13 +367,74 @@
                 <textarea id="texto" placeholder="Escribe aquí el texto a codificar..." spellcheck="false"></textarea>
             </div>
 
-            <!-- Campo "Texto visible" (solo para Code 128) -->
-            <div class="campo" id="campoTextoVisible">
+            <!-- Campo "Texto central decorativo" (solo para Code 128) -->
+            <div class="campo" id="campoTextoCentral">
                 <label class="checkbox-linea">
-                    <input type="checkbox" id="chkTextoVisible">
-                    Texto personalizado bajo el código
+                    <input type="checkbox" id="chkTextoCentral">
+                    Texto central decorativo
                 </label>
-                <input type="text" id="textoVisible" class="oculto" placeholder="Texto opcional a mostrar bajo el código" spellcheck="false">
+
+                <div class="subpanel oculto" id="subpanelTextoCentral">
+                    <div class="subcampo">
+                        <label for="textoCentral">Texto a mostrar</label>
+                        <input type="text" id="textoCentral" placeholder="Texto decorativo central" spellcheck="false">
+                    </div>
+
+                    <div class="subcampo">
+                        <label for="fuenteCentral">Fuente</label>
+                        <select id="fuenteCentral">
+                            <option value="system-ui, sans-serif" selected>System UI (palo seco)</option>
+                            <option value="Arial, sans-serif">Arial (palo seco)</option>
+                            <option value="Helvetica, Arial, sans-serif">Helvetica (palo seco)</option>
+                            <option value="Verdana, sans-serif">Verdana (palo seco)</option>
+                            <option value="Georgia, serif">Georgia (gótica)</option>
+                            <option value="'Courier New', monospace">Courier New (monoespaciada)</option>
+                            <option value="cursive">Cursive (script)</option>
+                        </select>
+                    </div>
+
+                    <div class="subcampo">
+                        <label for="tamanoFuente">Tamaño de fuente</label>
+                        <div class="slider-linea">
+                            <input type="range" id="tamanoFuente" min="12" max="60" value="28" step="1">
+                            <span class="slider-valor" id="valTamanoFuente">28</span>
+                        </div>
+                    </div>
+
+                    <div class="subcampo">
+                        <label for="altoRecuadro">Alto del recuadro</label>
+                        <div class="slider-linea">
+                            <input type="range" id="altoRecuadro" min="20" max="80" value="40" step="1">
+                            <span class="slider-valor" id="valAltoRecuadro">40</span>
+                        </div>
+                    </div>
+
+                    <div class="subcampo">
+                        <label for="radioEsquinas">Radio de esquinas</label>
+                        <div class="slider-linea">
+                            <input type="range" id="radioEsquinas" min="0" max="30" value="12" step="1">
+                            <span class="slider-valor" id="valRadioEsquinas">12</span>
+                        </div>
+                    </div>
+
+                    <div class="subcampo">
+                        <label for="colorFondoCentral">Color de fondo</label>
+                        <div class="color-linea">
+                            <input type="color" id="colorFondoCentral" value="#ffffff">
+                            <input type="text" id="hexFondoCentral" value="#ffffff" maxlength="7">
+                        </div>
+                    </div>
+
+                    <div class="subcampo">
+                        <label for="colorTextoCentral">Color del texto</label>
+                        <div class="color-linea">
+                            <input type="color" id="colorTextoCentral" value="#000000">
+                            <input type="text" id="hexTextoCentral" value="#000000" maxlength="7">
+                        </div>
+                    </div>
+
+                    <button type="button" class="btn-restaurar" id="btnRestaurar">Restaurar valores por defecto</button>
+                </div>
             </div>
 
             <div class="campo" id="campoErrorCorrection">
@@ -297,6 +456,7 @@
                 <span class="aviso-vacio" id="avisoVacio">Escribe algo para generar el código</span>
             </div>
 
+            <div class="aviso oculto" id="avisoAncho"></div>
             <div class="error oculto" id="mensajeError"></div>
 
             <div class="botones">
@@ -308,19 +468,42 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bwip-js@4.5.4/dist/bwip-js-min.js"></script>
     <script>
+        // ==================== Valores por defecto ====================
+        const DEFAULTS = {
+            tamanoFuente: 28,
+            altoRecuadro: 40,
+            radioEsquinas: 12,
+            colorFondo: '#ffffff',
+            colorTexto: '#000000'
+        };
+
         // ==================== Referencias DOM ====================
         const tipoSelect        = document.getElementById('tipo');
         const textoInput        = document.getElementById('texto');
 
-        const campoTextoVisible = document.getElementById('campoTextoVisible');
-        const chkTextoVisible   = document.getElementById('chkTextoVisible');
-        const textoVisibleInput = document.getElementById('textoVisible');
+        const campoTextoCentral = document.getElementById('campoTextoCentral');
+        const chkTextoCentral   = document.getElementById('chkTextoCentral');
+        const subpanelCentral   = document.getElementById('subpanelTextoCentral');
+        const textoCentralInput = document.getElementById('textoCentral');
+        const fuenteCentralSel  = document.getElementById('fuenteCentral');
+        const tamanoFuente      = document.getElementById('tamanoFuente');
+        const valTamanoFuente   = document.getElementById('valTamanoFuente');
+        const altoRecuadro      = document.getElementById('altoRecuadro');
+        const valAltoRecuadro   = document.getElementById('valAltoRecuadro');
+        const radioEsquinas     = document.getElementById('radioEsquinas');
+        const valRadioEsquinas  = document.getElementById('valRadioEsquinas');
+        const colorFondoCentral = document.getElementById('colorFondoCentral');
+        const hexFondoCentral   = document.getElementById('hexFondoCentral');
+        const colorTextoCentral = document.getElementById('colorTextoCentral');
+        const hexTextoCentral   = document.getElementById('hexTextoCentral');
+        const btnRestaurar      = document.getElementById('btnRestaurar');
 
         const campoErrCorr      = document.getElementById('campoErrorCorrection');
         const errorCorrection   = document.getElementById('errorCorrection');
 
         const lienzo            = document.getElementById('lienzo');
         const avisoVacio        = document.getElementById('avisoVacio');
+        const avisoAncho        = document.getElementById('avisoAncho');
         const mensajeError      = document.getElementById('mensajeError');
         const btnDescargar      = document.getElementById('btnDescargar');
         const btnCopiar         = document.getElementById('btnCopiar');
@@ -346,6 +529,11 @@
             }, 500);
         }
 
+        function ocultarAvisoAncho() {
+            avisoAncho.textContent = '';
+            avisoAncho.classList.add('oculto');
+        }
+
         function limpiarLienzo() {
             lienzo.innerHTML = '';
             lienzo.appendChild(avisoVacio);
@@ -357,13 +545,8 @@
             btnCopiar.disabled = !habilitado;
         }
 
-        /**
-         * El selector de error correction solo aplica a QR.
-         * Se oculta con Code 128 y con Aztec.
-         */
         function actualizarVisibilidadErrorCorrection() {
-            const tipo = tipoSelect.value;
-            if (tipo === 'qrcode') {
+            if (tipoSelect.value === 'qrcode') {
                 campoErrCorr.classList.remove('oculto');
             } else {
                 campoErrCorr.classList.add('oculto');
@@ -371,21 +554,44 @@
         }
 
         /**
-         * El campo "Texto visible" solo aplica a Code 128.
-         * Al ocultarse (por cambio de tipo), se resetea por completo:
-         * checkbox desactivado, input oculto y vacío.
+         * El bloque "Texto central decorativo" solo aplica a Code 128.
+         * Al ocultarse (por cambio de tipo), reset completo.
          */
-        function actualizarVisibilidadTextoVisible() {
-            const tipo = tipoSelect.value;
-            if (tipo === 'code128') {
-                campoTextoVisible.classList.remove('oculto');
+        function actualizarVisibilidadTextoCentral() {
+            if (tipoSelect.value === 'code128') {
+                campoTextoCentral.classList.remove('oculto');
             } else {
-                campoTextoVisible.classList.add('oculto');
-                // Reset completo (opción b)
-                chkTextoVisible.checked = false;
-                textoVisibleInput.value = '';
-                textoVisibleInput.classList.add('oculto');
+                campoTextoCentral.classList.add('oculto');
+                resetTextoCentral();
             }
+        }
+
+        function resetTextoCentral() {
+            chkTextoCentral.checked = false;
+            subpanelCentral.classList.add('oculto');
+            textoCentralInput.value = '';
+            restaurarValoresRecuadro();
+        }
+
+        function restaurarValoresRecuadro() {
+            tamanoFuente.value = DEFAULTS.tamanoFuente;
+            valTamanoFuente.textContent = DEFAULTS.tamanoFuente;
+            altoRecuadro.value = DEFAULTS.altoRecuadro;
+            valAltoRecuadro.textContent = DEFAULTS.altoRecuadro;
+            radioEsquinas.value = DEFAULTS.radioEsquinas;
+            valRadioEsquinas.textContent = DEFAULTS.radioEsquinas;
+            colorFondoCentral.value = DEFAULTS.colorFondo;
+            hexFondoCentral.value = DEFAULTS.colorFondo;
+            colorTextoCentral.value = DEFAULTS.colorTexto;
+            hexTextoCentral.value = DEFAULTS.colorTexto;
+            fuenteCentralSel.value = 'system-ui, sans-serif';
+        }
+
+        /**
+         * Valida un hex tipo #RRGGBB.
+         */
+        function esHexValido(valor) {
+            return /^#[0-9a-fA-F]{6}$/.test(valor);
         }
 
         /**
@@ -408,10 +614,88 @@
             return `${prefijo}_${cuerpo}.svg`;
         }
 
+        // ==================== Inyección del recuadro central ====================
+
+        /**
+         * Parsea el SVG de bwip-js, inyecta un rect + text centrado y
+         * devuelve el SVG serializado de nuevo como string.
+         * Devuelve también info para el aviso del 30%.
+         */
+        function inyectarTextoCentral(svgString, config) {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(svgString, 'image/svg+xml');
+            const svgEl = doc.documentElement;
+
+            // Dimensiones del SVG de bwip-js.
+            // bwip-js pone width/height y viewBox. Los leemos.
+            const anchoTotal = parseFloat(svgEl.getAttribute('width'));
+            const altoTotal  = parseFloat(svgEl.getAttribute('height'));
+
+            // Fallback: si no hay width/height, usamos viewBox.
+            let ancho = anchoTotal;
+            let alto  = altoTotal;
+            const viewBox = svgEl.getAttribute('viewBox');
+            if ((!ancho || !alto) && viewBox) {
+                const partes = viewBox.split(/\s+/);
+                ancho = parseFloat(partes[2]);
+                alto  = parseFloat(partes[3]);
+            }
+
+            const { texto, fuente, tamanoFuente, altoRecuadro,
+                    radioEsquinas, colorFondo, colorTexto } = config;
+
+            // Estimación del ancho del recuadro:
+            // anchoTexto ≈ longitud × tamañoFuente × 0.6 (sans) 
+            // Ajuste para script/cursive que suele ser más estrecho.
+            const factor = fuente.includes('cursive') ? 0.5 : 0.6;
+            const anchoTexto = texto.length * tamanoFuente * factor;
+            const paddingInterno = 12;
+            const anchoRecuadro = anchoTexto + paddingInterno * 2;
+
+            // Centro del SVG
+            const cx = ancho / 2;
+            const cy = alto / 2;
+
+            // Rect
+            const rectX = cx - anchoRecuadro / 2;
+            const rectY = cy - altoRecuadro / 2;
+
+            const rect = doc.createElementNS('http://www.w3.org/2000/svg', 'rect');
+            rect.setAttribute('x', rectX.toFixed(2));
+            rect.setAttribute('y', rectY.toFixed(2));
+            rect.setAttribute('width', anchoRecuadro.toFixed(2));
+            rect.setAttribute('height', altoRecuadro.toFixed(2));
+            rect.setAttribute('rx', radioEsquinas);
+            rect.setAttribute('ry', radioEsquinas);
+            rect.setAttribute('fill', colorFondo);
+
+            // Text
+            const text = doc.createElementNS('http://www.w3.org/2000/svg', 'text');
+            text.setAttribute('x', cx.toFixed(2));
+            text.setAttribute('y', cy.toFixed(2));
+            text.setAttribute('text-anchor', 'middle');
+            text.setAttribute('dominant-baseline', 'central');
+            text.setAttribute('font-family', fuente);
+            text.setAttribute('font-size', tamanoFuente);
+            text.setAttribute('fill', colorTexto);
+            text.textContent = texto;
+
+            svgEl.appendChild(rect);
+            svgEl.appendChild(text);
+
+            const serializado = new XMLSerializer().serializeToString(svgEl);
+
+            return {
+                svg: serializado,
+                ratioAncho: anchoRecuadro / ancho
+            };
+        }
+
         // ==================== Generación ====================
 
         function generarCodigo() {
             ocultarError();
+            ocultarAvisoAncho();
 
             const tipo = tipoSelect.value;
             const texto = textoInput.value;
@@ -431,23 +715,24 @@
                 paddingheight: 10
             };
 
+            // ¿Texto central activo? (solo aplica a Code 128)
+            const usaTextoCentral =
+                tipo === 'code128' &&
+                chkTextoCentral.checked &&
+                textoCentralInput.value.trim() !== '';
+
             if (tipo === 'code128') {
-                opciones.includetext = true;
                 opciones.textxalign = 'center';
                 opciones.height = 10;
 
-                // Texto visible personalizado (alttext) solo si:
-                // - el checkbox está activo
-                // - hay contenido en el input
-                // En caso contrario, bwip-js muestra el texto del dato real.
-                const usaTextoVisible = chkTextoVisible.checked && textoVisibleInput.value.trim() !== '';
-                if (usaTextoVisible) {
-                    opciones.alttext = textoVisibleInput.value;
+                if (usaTextoCentral) {
+                    // Ocultamos el texto inferior para que solo se vea el recuadro central
+                    opciones.includetext = false;
+                } else {
+                    opciones.includetext = true;
                 }
             }
 
-            // Error correction SOLO aplica a QR.
-            // Aztec usa su propio nivel automático.
             if (tipo === 'qrcode') {
                 opciones.eclevel = errorCorrection.value;
             }
@@ -462,6 +747,35 @@
                 habilitarBotones(false);
                 mostrarErrorDiferido('No se pudo generar el código con esos datos.');
                 return;
+            }
+
+            // Inyección del recuadro central si aplica
+            if (usaTextoCentral) {
+                const config = {
+                    texto: textoCentralInput.value,
+                    fuente: fuenteCentralSel.value,
+                    tamanoFuente: parseInt(tamanoFuente.value, 10),
+                    altoRecuadro: parseInt(altoRecuadro.value, 10),
+                    radioEsquinas: parseInt(radioEsquinas.value, 10),
+                    colorFondo: colorFondoCentral.value,
+                    colorTexto: colorTextoCentral.value
+                };
+
+                try {
+                    const resultado = inyectarTextoCentral(svg, config);
+                    svg = resultado.svg;
+
+                    if (resultado.ratioAncho > 0.30) {
+                        const porcentaje = Math.round(resultado.ratioAncho * 100);
+                        avisoAncho.textContent =
+                            `El texto central ocupa aproximadamente el ${porcentaje}% del ancho del código. ` +
+                            `Por encima del 30% puede afectar la legibilidad al escanear.`;
+                        avisoAncho.classList.remove('oculto');
+                    }
+                } catch (err) {
+                    console.error('Error al inyectar texto central:', err);
+                    // Seguimos con el SVG original sin recuadro
+                }
             }
 
             svgActual = svg;
@@ -523,25 +837,73 @@
 
         tipoSelect.addEventListener('change', () => {
             actualizarVisibilidadErrorCorrection();
-            actualizarVisibilidadTextoVisible();
+            actualizarVisibilidadTextoCentral();
             programarGeneracion();
         });
 
         errorCorrection.addEventListener('change', programarGeneracion);
 
-        // Checkbox de "Texto visible"
-        chkTextoVisible.addEventListener('change', () => {
-            if (chkTextoVisible.checked) {
-                textoVisibleInput.classList.remove('oculto');
+        // Checkbox "Texto central decorativo"
+        chkTextoCentral.addEventListener('change', () => {
+            if (chkTextoCentral.checked) {
+                subpanelCentral.classList.remove('oculto');
             } else {
-                textoVisibleInput.value = '';       // opción a: borrar al desactivar
-                textoVisibleInput.classList.add('oculto');
+                subpanelCentral.classList.add('oculto');
+                textoCentralInput.value = '';       // se limpia al desactivar
             }
             programarGeneracion();
         });
 
-        // Input de "Texto visible"
-        textoVisibleInput.addEventListener('input', programarGeneracion);
+        // Input de texto central
+        textoCentralInput.addEventListener('input', programarGeneracion);
+
+        // Selector de fuente
+        fuenteCentralSel.addEventListener('change', programarGeneracion);
+
+        // Sliders (actualizar valor visible + regenerar)
+        tamanoFuente.addEventListener('input', () => {
+            valTamanoFuente.textContent = tamanoFuente.value;
+            programarGeneracion();
+        });
+        altoRecuadro.addEventListener('input', () => {
+            valAltoRecuadro.textContent = altoRecuadro.value;
+            programarGeneracion();
+        });
+        radioEsquinas.addEventListener('input', () => {
+            valRadioEsquinas.textContent = radioEsquinas.value;
+            programarGeneracion();
+        });
+
+        // Colores — sincronización picker <-> hex
+        colorFondoCentral.addEventListener('input', () => {
+            hexFondoCentral.value = colorFondoCentral.value;
+            programarGeneracion();
+        });
+        hexFondoCentral.addEventListener('input', () => {
+            const valor = hexFondoCentral.value.trim();
+            if (esHexValido(valor)) {
+                colorFondoCentral.value = valor;
+                programarGeneracion();
+            }
+        });
+
+        colorTextoCentral.addEventListener('input', () => {
+            hexTextoCentral.value = colorTextoCentral.value;
+            programarGeneracion();
+        });
+        hexTextoCentral.addEventListener('input', () => {
+            const valor = hexTextoCentral.value.trim();
+            if (esHexValido(valor)) {
+                colorTextoCentral.value = valor;
+                programarGeneracion();
+            }
+        });
+
+        // Botón restaurar
+        btnRestaurar.addEventListener('click', () => {
+            restaurarValoresRecuadro();
+            programarGeneracion();
+        });
 
         btnDescargar.addEventListener('click', descargarSVG);
         btnCopiar.addEventListener('click', copiarSVG);
@@ -550,7 +912,7 @@
 
         window.addEventListener('DOMContentLoaded', () => {
             actualizarVisibilidadErrorCorrection();
-            actualizarVisibilidadTextoVisible();
+            actualizarVisibilidadTextoCentral();
             limpiarLienzo();
             habilitarBotones(false);
         });
