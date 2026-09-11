@@ -12,17 +12,17 @@
     }
 
     :root {
-        --fondo: #f5f1e8;
-        --tarjeta: #ffffff;
-        --borde: #e5e0d5;
-        --texto: #2d3748;
-        --texto-suave: #718096;
-        --acento: #2b6cb0;
+        --fondo: #0a0a0a;
+        --tarjeta: #141414;
+        --borde: #2a2a2a;
+        --texto: #f0f0f0;
+        --texto-suave: #8a8a8a;
+        --acento: #f0f0f0;
         --rojo: #c53030;
         --rojo-hover: #9b2c2c;
         --verde: #2f855a;
-        --amarillo-fondo: #fefcbf;
-        --amarillo-texto: #744210;
+        --amarillo-fondo: #2a2410;
+        --amarillo-texto: #e8d27a;
         --amarillo-borde: #d69e2e;
         --radio: 12px;
     }
@@ -30,6 +30,10 @@
     body {
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
         background: var(--fondo);
+        background-image:
+            linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px),
+            linear-gradient(0deg,  rgba(255,255,255,0.03) 1px, transparent 1px);
+        background-size: 40px 40px;
         min-height: 100vh;
         padding: 24px;
         color: var(--texto);
@@ -49,6 +53,30 @@
         border-radius: var(--radio);
         border: 1px solid var(--borde);
         padding: 24px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .tarjeta::before {
+        content: "";
+        position: absolute;
+        top: -40px;
+        right: -40px;
+        width: 120px;
+        height: 120px;
+        background: linear-gradient(135deg, transparent 45%, rgba(255,255,255,0.06) 45%, rgba(255,255,255,0.06) 55%, transparent 55%);
+        pointer-events: none;
+    }
+
+    .tarjeta::after {
+        content: "";
+        position: absolute;
+        bottom: -40px;
+        left: -40px;
+        width: 120px;
+        height: 120px;
+        background: linear-gradient(135deg, transparent 45%, rgba(255,255,255,0.04) 45%, rgba(255,255,255,0.04) 55%, transparent 55%);
+        pointer-events: none;
     }
 
     h2 {
@@ -60,6 +88,8 @@
 
     .campo {
         margin-bottom: 20px;
+        position: relative;
+        z-index: 1;
     }
 
     label {
@@ -79,7 +109,7 @@
         border-radius: 8px;
         font-size: 0.95rem;
         font-family: inherit;
-        background: #fff;
+        background: #0f0f0f;
         color: var(--texto);
         transition: border-color 0.15s;
     }
@@ -88,7 +118,7 @@
     textarea:focus,
     input[type="text"]:focus {
         outline: none;
-        border-color: var(--acento);
+        border-color: var(--texto-suave);
     }
 
     textarea {
@@ -101,7 +131,6 @@
         display: none;
     }
 
-    /* ===== Campo "Texto central decorativo" ===== */
     #campoTextoCentral.oculto {
         display: none;
     }
@@ -122,7 +151,7 @@
         width: 16px;
         height: 16px;
         cursor: pointer;
-        accent-color: var(--acento);
+        accent-color: var(--texto);
     }
 
     .subpanel {
@@ -158,7 +187,7 @@
 
     .slider-linea input[type="range"] {
         flex: 1;
-        accent-color: var(--acento);
+        accent-color: var(--texto);
         cursor: pointer;
     }
 
@@ -167,7 +196,7 @@
         text-align: right;
         font-size: 0.8rem;
         font-weight: 700;
-        color: var(--acento);
+        color: var(--texto);
         font-variant-numeric: tabular-nums;
     }
 
@@ -183,7 +212,7 @@
         padding: 2px;
         border: 1px solid var(--borde);
         border-radius: 6px;
-        background: #fff;
+        background: #0f0f0f;
         cursor: pointer;
     }
 
@@ -200,7 +229,7 @@
         font-size: 0.8rem;
         font-weight: 600;
         border: 1px solid var(--borde);
-        background: #f7fafc;
+        background: #1a1a1a;
         color: var(--texto-suave);
         border-radius: 6px;
         cursor: pointer;
@@ -210,13 +239,26 @@
     }
 
     .btn-restaurar:hover {
-        background: #edf2f7;
+        background: #222;
         color: var(--texto);
     }
 
     .preview-tarjeta {
         display: flex;
         flex-direction: column;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .preview-tarjeta::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 6px;
+        height: 100%;
+        background: linear-gradient(180deg, transparent, rgba(255,255,255,0.08), transparent);
+        pointer-events: none;
     }
 
     .preview-header {
@@ -253,7 +295,7 @@
     }
 
     .aviso-vacio {
-        color: var(--texto-suave);
+        color: #999;
         font-size: 0.9rem;
         text-align: center;
         user-select: none;
@@ -274,8 +316,8 @@
     }
 
     .error {
-        background: #fed7d7;
-        color: var(--rojo);
+        background: #2a1010;
+        color: #f5a5a5;
         padding: 10px 14px;
         border-radius: 8px;
         font-size: 0.85rem;
@@ -310,7 +352,7 @@
     }
 
     button:not(.btn-restaurar):disabled {
-        opacity: 0.4;
+        opacity: 0.3;
         cursor: not-allowed;
     }
 
@@ -324,12 +366,12 @@
     }
 
     .btn-copiar {
-        background: #edf2f7;
+        background: #1f1f1f;
         color: var(--texto);
     }
 
     .btn-copiar:hover:not(:disabled) {
-        background: #e2e8f0;
+        background: #2a2a2a;
     }
 
     .btn-copiar.copiado {
@@ -351,7 +393,7 @@
     <div class="contenedor">
         <!-- Panel de configuración -->
         <div class="tarjeta">
-            <h2>Configuración</h2>
+            <h2>@Proyecto_Dekai</h2>
 
             <div class="campo">
                 <label for="tipo">Tipo de código</label>
@@ -553,10 +595,6 @@
             }
         }
 
-        /**
-         * El bloque "Texto central decorativo" solo aplica a Code 128.
-         * Al ocultarse (por cambio de tipo), reset completo.
-         */
         function actualizarVisibilidadTextoCentral() {
             if (tipoSelect.value === 'code128') {
                 campoTextoCentral.classList.remove('oculto');
@@ -587,16 +625,10 @@
             fuenteCentralSel.value = 'system-ui, sans-serif';
         }
 
-        /**
-         * Valida un hex tipo #RRGGBB.
-         */
         function esHexValido(valor) {
             return /^#[0-9a-fA-F]{6}$/.test(valor);
         }
 
-        /**
-         * Genera un nombre de archivo seguro a partir del tipo y el texto.
-         */
         function generarNombreArchivo(tipo, texto) {
             const mapa = { code128: 'code128', qrcode: 'qrcode', azteccode: 'aztec' };
             const prefijo = mapa[tipo] || 'codigo';
@@ -616,22 +648,14 @@
 
         // ==================== Inyección del recuadro central ====================
 
-        /**
-         * Parsea el SVG de bwip-js, inyecta un rect + text centrado y
-         * devuelve el SVG serializado de nuevo como string.
-         * Devuelve también info para el aviso del 30%.
-         */
         function inyectarTextoCentral(svgString, config) {
             const parser = new DOMParser();
             const doc = parser.parseFromString(svgString, 'image/svg+xml');
             const svgEl = doc.documentElement;
 
-            // Dimensiones del SVG de bwip-js.
-            // bwip-js pone width/height y viewBox. Los leemos.
             const anchoTotal = parseFloat(svgEl.getAttribute('width'));
             const altoTotal  = parseFloat(svgEl.getAttribute('height'));
 
-            // Fallback: si no hay width/height, usamos viewBox.
             let ancho = anchoTotal;
             let alto  = altoTotal;
             const viewBox = svgEl.getAttribute('viewBox');
@@ -644,19 +668,14 @@
             const { texto, fuente, tamanoFuente, altoRecuadro,
                     radioEsquinas, colorFondo, colorTexto } = config;
 
-            // Estimación del ancho del recuadro:
-            // anchoTexto ≈ longitud × tamañoFuente × 0.6 (sans) 
-            // Ajuste para script/cursive que suele ser más estrecho.
             const factor = fuente.includes('cursive') ? 0.5 : 0.6;
             const anchoTexto = texto.length * tamanoFuente * factor;
             const paddingInterno = 12;
             const anchoRecuadro = anchoTexto + paddingInterno * 2;
 
-            // Centro del SVG
             const cx = ancho / 2;
             const cy = alto / 2;
 
-            // Rect
             const rectX = cx - anchoRecuadro / 2;
             const rectY = cy - altoRecuadro / 2;
 
@@ -669,7 +688,6 @@
             rect.setAttribute('ry', radioEsquinas);
             rect.setAttribute('fill', colorFondo);
 
-            // Text
             const text = doc.createElementNS('http://www.w3.org/2000/svg', 'text');
             text.setAttribute('x', cx.toFixed(2));
             text.setAttribute('y', cy.toFixed(2));
@@ -715,7 +733,6 @@
                 paddingheight: 10
             };
 
-            // ¿Texto central activo? (solo aplica a Code 128)
             const usaTextoCentral =
                 tipo === 'code128' &&
                 chkTextoCentral.checked &&
@@ -726,7 +743,6 @@
                 opciones.height = 10;
 
                 if (usaTextoCentral) {
-                    // Ocultamos el texto inferior para que solo se vea el recuadro central
                     opciones.includetext = false;
                 } else {
                     opciones.includetext = true;
@@ -749,7 +765,6 @@
                 return;
             }
 
-            // Inyección del recuadro central si aplica
             if (usaTextoCentral) {
                 const config = {
                     texto: textoCentralInput.value,
@@ -774,7 +789,6 @@
                     }
                 } catch (err) {
                     console.error('Error al inyectar texto central:', err);
-                    // Seguimos con el SVG original sin recuadro
                 }
             }
 
@@ -843,24 +857,19 @@
 
         errorCorrection.addEventListener('change', programarGeneracion);
 
-        // Checkbox "Texto central decorativo"
         chkTextoCentral.addEventListener('change', () => {
             if (chkTextoCentral.checked) {
                 subpanelCentral.classList.remove('oculto');
             } else {
                 subpanelCentral.classList.add('oculto');
-                textoCentralInput.value = '';       // se limpia al desactivar
+                textoCentralInput.value = '';
             }
             programarGeneracion();
         });
 
-        // Input de texto central
         textoCentralInput.addEventListener('input', programarGeneracion);
-
-        // Selector de fuente
         fuenteCentralSel.addEventListener('change', programarGeneracion);
 
-        // Sliders (actualizar valor visible + regenerar)
         tamanoFuente.addEventListener('input', () => {
             valTamanoFuente.textContent = tamanoFuente.value;
             programarGeneracion();
@@ -874,7 +883,6 @@
             programarGeneracion();
         });
 
-        // Colores — sincronización picker <-> hex
         colorFondoCentral.addEventListener('input', () => {
             hexFondoCentral.value = colorFondoCentral.value;
             programarGeneracion();
@@ -899,7 +907,6 @@
             }
         });
 
-        // Botón restaurar
         btnRestaurar.addEventListener('click', () => {
             restaurarValoresRecuadro();
             programarGeneracion();
