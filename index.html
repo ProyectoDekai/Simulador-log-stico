@@ -190,6 +190,11 @@
         flex-shrink: 0;
     }
 
+    /* ===== Checkbox mostrar datos ===== */
+    #campoMostrarDatos.oculto {
+        display: none;
+    }
+
     .preview-tarjeta {
         display: flex;
         flex-direction: column;
@@ -262,13 +267,45 @@
         display: none;
     }
 
-    .botones {
+    /* ===== Botones de tamaño ===== */
+    .size-buttons {
         display: flex;
-        gap: 12px;
+        gap: 8px;
         margin-top: 20px;
     }
 
-    button:not(.btn-restaurar) {
+    .size-buttons button {
+        flex: 1;
+        padding: 10px 12px;
+        border: 1px solid var(--borde);
+        border-radius: 8px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        font-family: inherit;
+        background: #1a1a1a;
+        color: var(--texto-suave);
+        cursor: pointer;
+        transition: background 0.15s, color 0.15s, border-color 0.15s;
+    }
+
+    .size-buttons button:hover:not(.active) {
+        background: #222;
+        color: var(--texto);
+    }
+
+    .size-buttons button.active {
+        background: var(--rojo);
+        color: #fff;
+        border-color: var(--rojo-hover);
+    }
+
+    .botones {
+        display: flex;
+        gap: 12px;
+        margin-top: 12px;
+    }
+
+    button:not(.btn-restaurar):not(.size-buttons button) {
         flex: 1;
         padding: 14px 20px;
         border: none;
@@ -280,11 +317,11 @@
         font-family: inherit;
     }
 
-    button:not(.btn-restaurar):active:not(:disabled) {
+    button:not(.btn-restaurar):not(.size-buttons button):active:not(:disabled) {
         transform: scale(0.98);
     }
 
-    button:not(.btn-restaurar):disabled {
+    button:not(.btn-restaurar):not(.size-buttons button):disabled {
         opacity: 0.3;
         cursor: not-allowed;
     }
@@ -396,26 +433,13 @@
         overflow-y: auto;
     }
 
-    .size-buttons {
-        display: flex;
-        gap: 8px;
+    .popup-controls .size-buttons {
+        margin-top: 0;
     }
 
-    .size-buttons button {
-        flex: 1;
+    .popup-controls .size-buttons button {
         padding: 8px 10px;
         font-size: 0.9rem;
-        border-radius: 8px;
-        border: 1px solid var(--borde);
-        background: #121212;
-        color: var(--texto);
-        cursor: pointer;
-    }
-
-    .size-buttons button.active {
-        background: var(--rojo);
-        color: #fff;
-        border-color: var(--rojo-hover);
     }
 
     .dimensiones {
@@ -497,10 +521,18 @@
                     Ajustar altura del Code 128
                 </label>
                 <div class="altura-linea" id="lineaAlturaCode128">
-                    <input type="range" id="sliderAltura" min="5" max="80" value="47" step="1">
-                    <input type="number" id="inputAltura" min="5" max="80" value="47" step="1">
+                    <input type="range" id="sliderAltura" min="5" max="80" value="80" step="1">
+                    <input type="number" id="inputAltura" min="5" max="80" value="80" step="1">
                     <span class="unidad">mm</span>
                 </div>
+            </div>
+
+            <!-- Mostrar datos bajo el código (solo Code 128) -->
+            <div class="campo" id="campoMostrarDatos">
+                <label class="checkbox-linea">
+                    <input type="checkbox" id="chkMostrarDatos">
+                    Mostrar datos
+                </label>
             </div>
         </div>
 
@@ -513,6 +545,13 @@
             </div>
 
             <div class="error oculto" id="mensajeError"></div>
+
+            <!-- Botones de tamaño de exportación -->
+            <div class="size-buttons">
+                <button data-size="small" id="btnSizeSmall" class="active">Pequeño</button>
+                <button data-size="medium" id="btnSizeMedium">Mediano</button>
+                <button data-size="large" id="btnSizeLarge">Grande</button>
+            </div>
 
             <div class="botones">
                 <button class="btn-descargar" id="btnDescargar" disabled>Descargar SVG</button>
@@ -564,13 +603,19 @@
         const inputAltura       = document.getElementById('inputAltura');
         const lineaAltura128    = document.getElementById('lineaAlturaCode128');
 
+        const campoMostrarDatos = document.getElementById('campoMostrarDatos');
+        const chkMostrarDatos   = document.getElementById('chkMostrarDatos');
+
         const lienzo            = document.getElementById('lienzo');
         const avisoVacio        = document.getElementById('avisoVacio');
         const mensajeError      = document.getElementById('mensajeError');
         const btnDescargar      = document.getElementById('btnDescargar');
         const btnPng            = document.getElementById('btnPng');
 
-        // Popup elements
+        const btnSizeSmall      = document.getElementById('btnSizeSmall');
+        const btnSizeMedium     = document.getElementById('btnSizeMedium');
+        const btnSizeLarge      = document.getElementById('btnSizeLarge');
+
         const overlay           = document.getElementById('overlay');
         const previewImg        = document.getElementById('previewImg');
         const btnCerrarPopup    = document.getElementById('btnCerrarPopup');
@@ -581,13 +626,14 @@
         const btnDescargarPng   = document.getElementById('btnDescargarPng');
 
         // ==================== Constantes ====================
-        // Medidas por defecto en px (según especificación del usuario)
-        const DIMS_AZTEC   = { width: 295, height: 295 };
-        const DIMS_CODE128 = { width: 531, height: 177 };
-        // Altura por defecto para Code 128 en mm
-        const ALTURA_128_DEFAULT_MM = 47;
-        // Factor de conversión: 1 mm = 3.7795 px (a 96 DPI)
-        const MM_TO_PX = 96 / 25.4;
+        const SCALES = {
+            small: 2,
+            medium: 4,
+            large: 6
+        };
+
+        // Altura por defecto para Code 128 en mm (80 mm -> height 20)
+        const ALTURA_128_DEFAULT_MM = 80;
 
         const PNG_SIZES = {
             small: 300,
@@ -602,6 +648,7 @@
         let timeoutGenerar = null;
         let timeoutError = null;
         let currentPngDataUrl = null;
+        let currentScale = 'small';
 
         // ==================== Utilidades ====================
         function ocultarError() {
@@ -629,13 +676,14 @@
             btnPng.disabled = !habilitado;
         }
 
-        // ==================== Visibilidad del campo altura ====================
+        // ==================== Visibilidad de campos ====================
         function actualizarVisibilidadAltura() {
             if (tipoSelect.value === 'code128') {
                 campoAltura128.classList.remove('oculto');
+                campoMostrarDatos.classList.remove('oculto');
             } else {
                 campoAltura128.classList.add('oculto');
-                // Al ocultarse, reset del checkbox y valores
+                campoMostrarDatos.classList.add('oculto');
                 chkAltura128.checked = false;
                 sliderAltura.value = ALTURA_128_DEFAULT_MM;
                 inputAltura.value = ALTURA_128_DEFAULT_MM;
@@ -649,6 +697,16 @@
             } else {
                 lineaAltura128.style.display = 'none';
             }
+        }
+
+        // ==================== Botones de tamaño ====================
+        function setScale(sizeKey) {
+            currentScale = sizeKey;
+            [btnSizeSmall, btnSizeMedium, btnSizeLarge].forEach(b => b.classList.remove('active'));
+            if (sizeKey === 'small') btnSizeSmall.classList.add('active');
+            if (sizeKey === 'medium') btnSizeMedium.classList.add('active');
+            if (sizeKey === 'large') btnSizeLarge.classList.add('active');
+            programarGeneracion();
         }
 
         // ==================== Generación ====================
@@ -691,29 +749,6 @@
             }
 
             return { width, height };
-        }
-
-        /**
-         * Ajusta el SVG generado por bwip-js a las medidas deseadas en px.
-         * Modifica los atributos width/height y añade un viewBox si no lo tiene.
-         */
-        function ajustarDimensionesSVG(svgString, targetWidth, targetHeight) {
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(svgString, 'image/svg+xml');
-            const svgEl = doc.documentElement;
-
-            // Asegurar viewBox con las dimensiones originales
-            let viewBox = svgEl.getAttribute('viewBox');
-            if (!viewBox) {
-                const w = parseFloat(svgEl.getAttribute('width')) || targetWidth;
-                const h = parseFloat(svgEl.getAttribute('height')) || targetHeight;
-                svgEl.setAttribute('viewBox', `0 0 ${w} ${h}`);
-            }
-
-            svgEl.setAttribute('width', targetWidth);
-            svgEl.setAttribute('height', targetHeight);
-
-            return new XMLSerializer().serializeToString(svgEl);
         }
 
         function renderSvgToPng(svgString, targetWidth) {
@@ -764,22 +799,18 @@
             const opciones = {
                 bcid: tipo,
                 text: texto,
-                scale: 3,
+                scale: SCALES[currentScale],
                 paddingwidth: 0,
                 paddingheight: 0
             };
 
             if (tipo === 'code128') {
                 opciones.textxalign = 'center';
-                opciones.includetext = true;
+                // El texto bajo el código solo si el checkbox está activo
+                opciones.includetext = chkMostrarDatos.checked;
 
-                // Si el checkbox está activo, calcular la altura en "unidades"
-                // para que bwip-js respete la proporción. El ajuste final de
-                // píxeles se hace después con ajustarDimensionesSVG.
                 if (chkAltura128.checked) {
                     const alturaMM = parseFloat(inputAltura.value) || ALTURA_128_DEFAULT_MM;
-                    // bwip-js usa "height" como altura en módulos.
-                    // Ajustamos para que la proporción resultante sea similar.
                     opciones.height = Math.max(5, Math.round(alturaMM / 4));
                 } else {
                     opciones.height = 10;
@@ -800,18 +831,6 @@
                 habilitarBotones(false);
                 mostrarErrorDiferido('No se pudo generar el código con esos datos.');
                 return;
-            }
-
-            // Aplicar dimensiones por defecto según el tipo
-            if (tipo === 'azteccode') {
-                svg = ajustarDimensionesSVG(svg, DIMS_AZTEC.width, DIMS_AZTEC.height);
-            } else if (tipo === 'code128') {
-                let altoPx = DIMS_CODE128.height;
-                if (chkAltura128.checked) {
-                    const alturaMM = parseFloat(inputAltura.value) || ALTURA_128_DEFAULT_MM;
-                    altoPx = Math.round(alturaMM * MM_TO_PX);
-                }
-                svg = ajustarDimensionesSVG(svg, DIMS_CODE128.width, altoPx);
             }
 
             svgActual = svg;
@@ -849,7 +868,13 @@
             if (!svgActual) return;
             overlay.classList.add('visible');
             overlay.querySelector('.popup').setAttribute('aria-hidden', 'false');
-            setPngSize('medium');
+
+            [btnSmall, btnMedium, btnLarge].forEach(b => b.classList.remove('active'));
+            if (currentScale === 'small') btnSmall.classList.add('active');
+            if (currentScale === 'medium') btnMedium.classList.add('active');
+            if (currentScale === 'large') btnLarge.classList.add('active');
+
+            setPngSize(currentScale);
         }
 
         function cerrarPopupPng() {
@@ -866,6 +891,12 @@
             if (sizeKey === 'small') btnSmall.classList.add('active');
             if (sizeKey === 'medium') btnMedium.classList.add('active');
             if (sizeKey === 'large') btnLarge.classList.add('active');
+
+            currentScale = sizeKey;
+            [btnSizeSmall, btnSizeMedium, btnSizeLarge].forEach(b => b.classList.remove('active'));
+            if (sizeKey === 'small') btnSizeSmall.classList.add('active');
+            if (sizeKey === 'medium') btnSizeMedium.classList.add('active');
+            if (sizeKey === 'large') btnSizeLarge.classList.add('active');
 
             const targetWidth = PNG_SIZES[sizeKey];
             try {
@@ -913,7 +944,8 @@
             programarGeneracion();
         });
 
-        // Slider <-> Input número (sincronizados)
+        chkMostrarDatos.addEventListener('change', programarGeneracion);
+
         sliderAltura.addEventListener('input', () => {
             inputAltura.value = sliderAltura.value;
             programarGeneracion();
@@ -937,6 +969,10 @@
 
         btnDescargar.addEventListener('click', descargarSVG);
         btnPng.addEventListener('click', abrirPopupPng);
+
+        btnSizeSmall.addEventListener('click', () => setScale('small'));
+        btnSizeMedium.addEventListener('click', () => setScale('medium'));
+        btnSizeLarge.addEventListener('click', () => setScale('large'));
 
         btnCerrarPopup.addEventListener('click', cerrarPopupPng);
         overlay.addEventListener('click', (e) => {
