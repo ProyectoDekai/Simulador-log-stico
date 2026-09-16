@@ -111,7 +111,8 @@
 
     select,
     textarea,
-    input[type="text"] {
+    input[type="text"],
+    input[type="number"] {
         width: 100%;
         padding: 10px 12px;
         border: 1px solid var(--borde);
@@ -125,7 +126,8 @@
 
     select:focus,
     textarea:focus,
-    input[type="text"]:focus {
+    input[type="text"]:focus,
+    input[type="number"]:focus {
         outline: none;
         border-color: var(--texto-suave);
     }
@@ -134,6 +136,58 @@
         height: 120px;
         resize: vertical;
         line-height: 1.4;
+    }
+
+    .checkbox-linea {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 0.85rem;
+        color: var(--texto);
+        margin-bottom: 0;
+        user-select: none;
+    }
+
+    .checkbox-linea input[type="checkbox"] {
+        width: 16px;
+        height: 16px;
+        cursor: pointer;
+        accent-color: var(--texto);
+    }
+
+    /* ===== Subpanel altura Code 128 ===== */
+    #campoAlturaCode128.oculto {
+        display: none;
+    }
+
+    .altura-linea {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-top: 10px;
+    }
+
+    .altura-linea input[type="range"] {
+        flex: 1;
+        accent-color: var(--texto);
+        cursor: pointer;
+    }
+
+    .altura-linea input[type="number"] {
+        width: 80px;
+        flex-shrink: 0;
+        padding: 6px 8px;
+        font-size: 0.85rem;
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .altura-linea .unidad {
+        font-size: 0.8rem;
+        color: var(--texto-suave);
+        flex-shrink: 0;
     }
 
     .preview-tarjeta {
@@ -435,6 +489,19 @@
                 <label for="texto">Datos</label>
                 <textarea id="texto" placeholder="Escribe aquí el texto a codificar..." spellcheck="false"></textarea>
             </div>
+
+            <!-- Altura personalizada para Code 128 -->
+            <div class="campo" id="campoAlturaCode128">
+                <label class="checkbox-linea">
+                    <input type="checkbox" id="chkAlturaCode128">
+                    Ajustar altura del Code 128
+                </label>
+                <div class="altura-linea" id="lineaAlturaCode128">
+                    <input type="range" id="sliderAltura" min="5" max="80" value="47" step="1">
+                    <input type="number" id="inputAltura" min="5" max="80" value="47" step="1">
+                    <span class="unidad">mm</span>
+                </div>
+            </div>
         </div>
 
         <!-- Panel de preview -->
@@ -491,6 +558,12 @@
         const tipoSelect        = document.getElementById('tipo');
         const textoInput        = document.getElementById('texto');
 
+        const campoAltura128    = document.getElementById('campoAlturaCode128');
+        const chkAltura128      = document.getElementById('chkAlturaCode128');
+        const sliderAltura      = document.getElementById('sliderAltura');
+        const inputAltura       = document.getElementById('inputAltura');
+        const lineaAltura128    = document.getElementById('lineaAlturaCode128');
+
         const lienzo            = document.getElementById('lienzo');
         const avisoVacio        = document.getElementById('avisoVacio');
         const mensajeError      = document.getElementById('mensajeError');
@@ -507,11 +580,14 @@
         const dimensionesTexto  = document.getElementById('dimensionesTexto');
         const btnDescargarPng   = document.getElementById('btnDescargarPng');
 
-        // ==================== Estado ====================
-        let svgActual = null;
-        let timeoutGenerar = null;
-        let timeoutError = null;
-        let currentPngDataUrl = null;
+        // ==================== Constantes ====================
+        // Medidas por defecto en px (según especificación del usuario)
+        const DIMS_AZTEC   = { width: 295, height: 295 };
+        const DIMS_CODE128 = { width: 531, height: 177 };
+        // Altura por defecto para Code 128 en mm
+        const ALTURA_128_DEFAULT_MM = 47;
+        // Factor de conversión: 1 mm = 3.7795 px (a 96 DPI)
+        const MM_TO_PX = 96 / 25.4;
 
         const PNG_SIZES = {
             small: 300,
@@ -520,6 +596,12 @@
         };
 
         const DPI_REF = 300;
+
+        // ==================== Estado ====================
+        let svgActual = null;
+        let timeoutGenerar = null;
+        let timeoutError = null;
+        let currentPngDataUrl = null;
 
         // ==================== Utilidades ====================
         function ocultarError() {
@@ -545,6 +627,28 @@
         function habilitarBotones(habilitado) {
             btnDescargar.disabled = !habilitado;
             btnPng.disabled = !habilitado;
+        }
+
+        // ==================== Visibilidad del campo altura ====================
+        function actualizarVisibilidadAltura() {
+            if (tipoSelect.value === 'code128') {
+                campoAltura128.classList.remove('oculto');
+            } else {
+                campoAltura128.classList.add('oculto');
+                // Al ocultarse, reset del checkbox y valores
+                chkAltura128.checked = false;
+                sliderAltura.value = ALTURA_128_DEFAULT_MM;
+                inputAltura.value = ALTURA_128_DEFAULT_MM;
+                actualizarVisibilidadLineaAltura();
+            }
+        }
+
+        function actualizarVisibilidadLineaAltura() {
+            if (chkAltura128.checked) {
+                lineaAltura128.style.display = 'flex';
+            } else {
+                lineaAltura128.style.display = 'none';
+            }
         }
 
         // ==================== Generación ====================
@@ -589,6 +693,29 @@
             return { width, height };
         }
 
+        /**
+         * Ajusta el SVG generado por bwip-js a las medidas deseadas en px.
+         * Modifica los atributos width/height y añade un viewBox si no lo tiene.
+         */
+        function ajustarDimensionesSVG(svgString, targetWidth, targetHeight) {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(svgString, 'image/svg+xml');
+            const svgEl = doc.documentElement;
+
+            // Asegurar viewBox con las dimensiones originales
+            let viewBox = svgEl.getAttribute('viewBox');
+            if (!viewBox) {
+                const w = parseFloat(svgEl.getAttribute('width')) || targetWidth;
+                const h = parseFloat(svgEl.getAttribute('height')) || targetHeight;
+                svgEl.setAttribute('viewBox', `0 0 ${w} ${h}`);
+            }
+
+            svgEl.setAttribute('width', targetWidth);
+            svgEl.setAttribute('height', targetHeight);
+
+            return new XMLSerializer().serializeToString(svgEl);
+        }
+
         function renderSvgToPng(svgString, targetWidth) {
             return new Promise((resolve, reject) => {
                 const dims = svgDimensions(svgString);
@@ -602,7 +729,6 @@
                         canvas.width = Math.round(dims.width * scale);
                         canvas.height = Math.round(dims.height * scale);
                         const ctx = canvas.getContext('2d');
-                        // SIN relleno: PNG transparente
                         ctx.clearRect(0, 0, canvas.width, canvas.height);
                         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
                         const dataUrl = canvas.toDataURL('image/png');
@@ -645,8 +771,19 @@
 
             if (tipo === 'code128') {
                 opciones.textxalign = 'center';
-                opciones.height = 10;
                 opciones.includetext = true;
+
+                // Si el checkbox está activo, calcular la altura en "unidades"
+                // para que bwip-js respete la proporción. El ajuste final de
+                // píxeles se hace después con ajustarDimensionesSVG.
+                if (chkAltura128.checked) {
+                    const alturaMM = parseFloat(inputAltura.value) || ALTURA_128_DEFAULT_MM;
+                    // bwip-js usa "height" como altura en módulos.
+                    // Ajustamos para que la proporción resultante sea similar.
+                    opciones.height = Math.max(5, Math.round(alturaMM / 4));
+                } else {
+                    opciones.height = 10;
+                }
             }
 
             if (tipo === 'qrcode') {
@@ -663,6 +800,18 @@
                 habilitarBotones(false);
                 mostrarErrorDiferido('No se pudo generar el código con esos datos.');
                 return;
+            }
+
+            // Aplicar dimensiones por defecto según el tipo
+            if (tipo === 'azteccode') {
+                svg = ajustarDimensionesSVG(svg, DIMS_AZTEC.width, DIMS_AZTEC.height);
+            } else if (tipo === 'code128') {
+                let altoPx = DIMS_CODE128.height;
+                if (chkAltura128.checked) {
+                    const alturaMM = parseFloat(inputAltura.value) || ALTURA_128_DEFAULT_MM;
+                    altoPx = Math.round(alturaMM * MM_TO_PX);
+                }
+                svg = ajustarDimensionesSVG(svg, DIMS_CODE128.width, altoPx);
             }
 
             svgActual = svg;
@@ -755,7 +904,35 @@
         textoInput.addEventListener('input', programarGeneracion);
 
         tipoSelect.addEventListener('change', () => {
+            actualizarVisibilidadAltura();
             programarGeneracion();
+        });
+
+        chkAltura128.addEventListener('change', () => {
+            actualizarVisibilidadLineaAltura();
+            programarGeneracion();
+        });
+
+        // Slider <-> Input número (sincronizados)
+        sliderAltura.addEventListener('input', () => {
+            inputAltura.value = sliderAltura.value;
+            programarGeneracion();
+        });
+
+        inputAltura.addEventListener('input', () => {
+            let v = parseFloat(inputAltura.value);
+            if (!isFinite(v)) v = ALTURA_128_DEFAULT_MM;
+            v = Math.max(5, Math.min(80, Math.round(v)));
+            sliderAltura.value = v;
+            programarGeneracion();
+        });
+
+        inputAltura.addEventListener('blur', () => {
+            let v = parseFloat(inputAltura.value);
+            if (!isFinite(v)) v = ALTURA_128_DEFAULT_MM;
+            v = Math.max(5, Math.min(80, Math.round(v)));
+            inputAltura.value = v;
+            sliderAltura.value = v;
         });
 
         btnDescargar.addEventListener('click', descargarSVG);
@@ -774,6 +951,8 @@
 
         // ==================== Inicialización ====================
         window.addEventListener('DOMContentLoaded', () => {
+            actualizarVisibilidadAltura();
+            actualizarVisibilidadLineaAltura();
             limpiarLienzo();
             habilitarBotones(false);
         });
